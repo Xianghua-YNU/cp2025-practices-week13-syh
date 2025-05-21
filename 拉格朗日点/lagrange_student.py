@@ -28,12 +28,11 @@ def lagrange_equation(r):
     返回:
         float: 方程左右两边的差值，当r是L1点位置时返回0
     """
-    # TODO: 实现L1点位置方程 (约5行代码)
-    # [STUDENT_CODE_HERE]
-    # 提示: 方程应该包含地球引力、月球引力和离心力的平衡关系
-    
-    raise NotImplementedError("请在 {} 中实现此函数。".format(__file__))
-    
+    # 实现L1点位置方程
+    gravitational_earth = G * M / r**2
+    gravitational_moon = G * m / (R - r)**2
+    centrifugal = omega**2 * r
+    equation_value = gravitational_earth - gravitational_moon - centrifugal
     return equation_value
 
 
@@ -47,13 +46,9 @@ def lagrange_equation_derivative(r):
     返回:
         float: 方程对r的导数值
     """
-    # TODO: 实现L1点位置方程的导数 (约5-10行代码)
-    # [STUDENT_CODE_HERE]
-    # 提示: 对lagrange_equation函数求导
-    
-    raise NotImplementedError("请在 {} 中实现此函数。".format(__file__))
-    
-    return derivative_value
+    # 实现L1点位置方程的导数
+    derivative = -2 * G * M / r**3 - 2 * G * m / (R - r)**3 - omega**2
+    return derivative
 
 
 def newton_method(f, df, x0, tol=1e-8, max_iter=100):
@@ -70,13 +65,20 @@ def newton_method(f, df, x0, tol=1e-8, max_iter=100):
     返回:
         tuple: (近似解, 迭代次数, 收敛标志)
     """
-    # TODO: 实现牛顿法 (约15行代码)
-    # [STUDENT_CODE_HERE]
-    # 提示: 迭代公式为 x_{n+1} = x_n - f(x_n)/df(x_n)
-    
-    raise NotImplementedError("请在 {} 中实现此函数。".format(__file__))
-    
-    return x, iterations, converged
+    x = x0
+    for i in range(max_iter):
+        fx = f(x)
+        if abs(fx) < tol:
+            return x, i, True
+        dfx = df(x)
+        if dfx == 0:
+            return x, i, False
+        prev_x = x
+        x = x - fx / dfx
+        # 添加相对误差检查
+        if x != 0 and abs((x - prev_x) / x) < tol:
+            return x, i, True
+    return x, max_iter, False
 
 
 def secant_method(f, a, b, tol=1e-8, max_iter=100):
@@ -93,13 +95,21 @@ def secant_method(f, a, b, tol=1e-8, max_iter=100):
     返回:
         tuple: (近似解, 迭代次数, 收敛标志)
     """
-    # TODO: 实现弦截法 (约15行代码)
-    # [STUDENT_CODE_HERE]
-    # 提示: 迭代公式为 x_{n+1} = x_n - f(x_n)*(x_n-x_{n-1})/(f(x_n)-f(x_{n-1}))
-    
-    raise NotImplementedError("请在 {} 中实现此函数。".format(__file__))
-    
-    return x, iterations, converged
+    fa = f(a)
+    fb = f(b)
+    for i in range(max_iter):
+        if abs(fb) < tol:
+            return b, i, True
+        if abs(fa - fb) < tol:
+            return b, i, False
+        c = b - fb * (b - a) / (fb - fa)
+        fc = f(c)
+        # 添加相对误差检查
+        if b != 0 and abs((c - b) / b) < tol:
+            return c, i, True
+        a, b = b, c
+        fa, fb = fb, fc
+    return b, max_iter, False
 
 
 def plot_lagrange_equation(r_min, r_max, num_points=1000):
@@ -114,12 +124,24 @@ def plot_lagrange_equation(r_min, r_max, num_points=1000):
     返回:
         matplotlib.figure.Figure: 绘制的图形对象
     """
-    # TODO: 实现绘制方程图像的代码 (约15行代码)
-    # [STUDENT_CODE_HERE]
-    # 提示: 在合适的范围内绘制函数图像，标记零点位置
+    fig, ax = plt.subplots(figsize=(10, 6))
+    r_values = np.linspace(r_min, r_max, num_points)
+    f_values = [lagrange_equation(r) for r in r_values]
     
-    raise NotImplementedError("请在 {} 中实现此函数。".format(__file__))
+    ax.plot(r_values, f_values)
+    ax.axhline(y=0, color='r', linestyle='-', alpha=0.3)
     
+    # 使用fsolve找到零点作为参考
+    r0_fsolve = (r_min + r_max) / 2
+    r_solution = optimize.fsolve(lagrange_equation, r0_fsolve)[0]
+    ax.scatter(r_solution, 0, color='g', s=50, zorder=5, label=f'零点: {r_solution:.2e} m')
+    
+    ax.set_title('拉格朗日点L1方程 $F(r) = 0$')
+    ax.set_xlabel('距离地心 r (m)')
+    ax.set_ylabel('方程值 F(r)')
+    ax.grid(True, alpha=0.3)
+    ax.legend()
+    plt.tight_layout()
     return fig
 
 
