@@ -17,8 +17,8 @@ C = 299792458       # 光速 (m/s)
 K_B = 1.380649e-23  # 玻尔兹曼常数 (J/K)
 
 # 可见光波长范围 (m)
-VISIBLE_LIGHT_MIN = 380e-9  # 380 nm
-VISIBLE_LIGHT_MAX = 780e-9  # 780 nm
+VISIBLE_LIGHT_MIN = 390e-9  # 390 nm
+VISIBLE_LIGHT_MAX = 750e-9  # 750 nm
 
 
 def planck_law(wavelength, temperature):
@@ -30,11 +30,19 @@ def planck_law(wavelength, temperature):
         temperature (float): 温度，单位为开尔文
     
     返回:
-        float or numpy.ndarray: 给定波长和温度下的辐射强度 (W/(m²·m))
+        float or numpy.ndarray: 给定波长和温度下的辐射强度 (W/(m²·m·sr))
     """
-    # TODO: 实现普朗克黑体辐射公式
-    # [STUDENT_CODE_HERE]
-    raise NotImplementedError("请在 {} 中实现此函数".format(__file__))
+    # 避免除零错误
+    if isinstance(wavelength, np.ndarray):
+        wavelength = np.where(wavelength == 0, 1e-10, wavelength)
+    else:
+        wavelength = wavelength if wavelength != 0 else 1e-10
+        
+    # 普朗克定律公式
+    term1 = (2 * H * C**2) / (wavelength**5)
+    term2 = np.exp((H * C) / (wavelength * K_B * temperature)) - 1
+    intensity = term1 / term2
+    
     return intensity
 
 
@@ -48,11 +56,20 @@ def calculate_visible_power_ratio(temperature):
     返回:
         float: 可见光效率（可见光功率/总功率）
     """
-    # TODO: 使用数值积分计算可见光效率
-    # 提示: 使用scipy.integrate.quad进行积分
-    # [STUDENT_CODE_HERE]
-    raise NotImplementedError("请在 {} 中实现此函数".format(__file__))
-    return visible_power_ratio
+    # 直接积分普朗克定律
+    def integrand(wavelength):
+        return planck_law(wavelength, temperature) * wavelength
+    
+    # 计算可见光波段的积分
+    visible_power, _ = integrate.quad(integrand, VISIBLE_LIGHT_MIN, VISIBLE_LIGHT_MAX)
+    
+    # 计算总辐射功率（使用合理的积分范围）
+    total_power, _ = integrate.quad(integrand, 1e-9, 1000e-9)
+    
+    # 计算效率
+    efficiency = visible_power / total_power
+    
+    return efficiency
 
 
 def plot_efficiency_vs_temperature(temp_range):
@@ -65,9 +82,19 @@ def plot_efficiency_vs_temperature(temp_range):
     返回:
         tuple: (matplotlib.figure.Figure, numpy.ndarray, numpy.ndarray) 图形对象、温度数组、效率数组
     """
-    # TODO: 计算并绘制效率-温度曲线
-    # [STUDENT_CODE_HERE]
-    raise NotImplementedError("请在 {} 中实现此函数".format(__file__))
+    # 计算每个温度点的效率
+    efficiencies = np.array([calculate_visible_power_ratio(temp) for temp in temp_range])
+    
+    # 创建图形
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(temp_range, efficiencies, 'b-', linewidth=2)
+    
+    # 设置图表属性
+    ax.set_xlabel('Temperature (K)', fontsize=12)
+    ax.set_ylabel('Visible Light Efficiency', fontsize=12)
+    ax.set_title('Incandescent Lamp Efficiency vs Temperature', fontsize=14)
+    ax.grid(True, alpha=0.3)
+    
     return fig, temp_range, efficiencies
 
 
@@ -78,10 +105,21 @@ def find_optimal_temperature():
     返回:
         tuple: (float, float) 最优温度和对应的效率
     """
-    # TODO: 使用scipy.optimize.minimize_scalar寻找最优温度
-    # 提示: 设置bounds=(1000,10000)和options={'xatol':1.0}
-    # [STUDENT_CODE_HERE]
-    raise NotImplementedError("请在 {} 中实现此函数".format(__file__))
+    # 定义目标函数（取负值以便使用最小化算法）
+    def objective_function(temperature):
+        return -calculate_visible_power_ratio(temperature)
+    
+    # 使用黄金分割法寻找最优温度
+    result = minimize_scalar(
+        objective_function,
+        bounds=(1000, 10000),
+        method='bounded',
+        options={'xatol': 1.0}  # 精度要求为1K
+    )
+    
+    optimal_temp = result.x
+    optimal_efficiency = -result.fun
+    
     return optimal_temp, optimal_efficiency
 
 
