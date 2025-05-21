@@ -58,13 +58,13 @@ def calculate_visible_power_ratio(temperature):
     """
     # 直接积分普朗克定律
     def integrand(wavelength):
-        return planck_law(wavelength, temperature) * wavelength
+        return planck_law(wavelength, temperature)  # 修正：移除了错误的*wavelength因子
     
     # 计算可见光波段的积分
     visible_power, _ = integrate.quad(integrand, VISIBLE_LIGHT_MIN, VISIBLE_LIGHT_MAX)
     
-    # 计算总辐射功率（使用合理的积分范围）
-    total_power, _ = integrate.quad(integrand, 1e-9, 1000e-9)
+    # 计算总辐射功率（扩展积分范围到10000nm以覆盖更多红外辐射）
+    total_power, _ = integrate.quad(integrand, 1e-9, 10000e-9)  # 修正：积分上限从1000nm提高到10000nm
     
     # 计算效率
     efficiency = visible_power / total_power
