@@ -19,9 +19,13 @@ def load_sunspot_data(url):
     返回:
         tuple: (years, sunspots) 年份和太阳黑子数
     """
-    # TODO: 使用np.loadtxt读取数据，只保留第2(年份)和3(太阳黑子数)列
-    # [STUDENT_CODE_HERE]
-    raise NotImplementedError("请在 {} 中实现此函数".format(__file__))
+    data = np.loadtxt(url)
+    years = data[:, 1]
+    sunspots = data[:, 3]
+    # 处理缺失值（以-1表示）
+    mask = sunspots >= 0
+    years = years[mask]
+    sunspots = sunspots[mask]
     return years, sunspots
 
 def plot_sunspot_data(years, sunspots):
@@ -32,9 +36,18 @@ def plot_sunspot_data(years, sunspots):
         years (numpy.ndarray): 年份数组
         sunspots (numpy.ndarray): 太阳黑子数数组
     """
-    # TODO: 实现数据可视化
-    # [STUDENT_CODE_HERE]
-    raise NotImplementedError("请在 {} 中实现此函数".format(__file__))
+    plt.figure(figsize=(12, 6))
+    plt.plot(years, sunspots)
+    plt.title('太阳黑子数随时间变化')
+    plt.xlabel('年份')
+    plt.ylabel('太阳黑子数')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+    
+    # 估计周期（目视）
+    estimated_period = float(input("请根据图像估计周期（月）："))
+    print(f"目视估计周期：{estimated_period} 月")
 
 def compute_power_spectrum(sunspots):
     """
@@ -46,9 +59,17 @@ def compute_power_spectrum(sunspots):
     返回:
         tuple: (frequencies, power) 频率数组和功率谱
     """
-    # TODO: 实现傅里叶变换和功率谱计算
-    # [STUDENT_CODE_HERE]
-    raise NotImplementedError("请在 {} 中实现此函数".format(__file__))
+    N = len(sunspots)
+    # 执行傅里叶变换
+    fft_result = np.fft.fft(sunspots)
+    # 计算功率谱 |c_k|^2
+    power = np.abs(fft_result)**2 / N
+    # 计算频率
+    frequencies = np.fft.fftfreq(N, 1.0)  # 频率间隔为1个月
+    # 只保留正频率部分（不包括0频率）
+    positive_freq_mask = (frequencies > 0) & (frequencies <= 0.5)
+    frequencies = frequencies[positive_freq_mask]
+    power = power[positive_freq_mask]
     return frequencies, power
 
 def plot_power_spectrum(frequencies, power):
@@ -59,9 +80,14 @@ def plot_power_spectrum(frequencies, power):
         frequencies (numpy.ndarray): 频率数组
         power (numpy.ndarray): 功率谱数组
     """
-    # TODO: 实现功率谱可视化
-    # [STUDENT_CODE_HERE]
-    raise NotImplementedError("请在 {} 中实现此函数".format(__file__))
+    plt.figure(figsize=(12, 6))
+    plt.plot(frequencies, power)
+    plt.title('太阳黑子数据功率谱')
+    plt.xlabel('频率 (1/月)')
+    plt.ylabel('功率')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
 
 def find_main_period(frequencies, power):
     """
@@ -74,9 +100,12 @@ def find_main_period(frequencies, power):
     返回:
         float: 主周期（月）
     """
-    # TODO: 实现主周期检测
-    # [STUDENT_CODE_HERE]
-    raise NotImplementedError("请在 {} 中实现此函数".format(__file__))
+    # 找到最大功率对应的索引
+    max_power_idx = np.argmax(power)
+    # 获取对应的频率
+    main_frequency = frequencies[max_power_idx]
+    # 计算周期（月）
+    main_period = 1.0 / main_frequency
     return main_period
 
 def main():
@@ -93,8 +122,8 @@ def main():
     
     # 3. 确定主周期
     main_period = find_main_period(frequencies, power)
-    print(f"\nMain period of sunspot cycle: {main_period:.2f} months")
-    print(f"Approximately {main_period/12:.2f} years")
+    print(f"\n主周期计算结果: {main_period:.2f} 月")
+    print(f"约等于 {main_period/12:.2f} 年")
 
 if __name__ == "__main__":
     main()
